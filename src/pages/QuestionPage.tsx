@@ -72,11 +72,18 @@ export function QuestionPage({ demo = false }: Props) {
   const countdownTimerRef = useRef<number | null>(null)
 
   const yesScale = useMemo(() => {
-    if (noStage >= 4) return yesVisualScale(noStage)
-    // 最初は等倍。NOを追うたびに少しずつ大きくする
+    if (noStage >= 4) return Math.max(yesVisualScale(noStage), 1.4)
+    // 最初は等倍。NOのたびに強めに主張（拡大）
     if (fleeCount <= 0) return 1
-    return Math.min(1.85, 1 + fleeCount * 0.14)
+    return Math.min(2.75, 1 + fleeCount * 0.32)
   }, [fleeCount, noStage])
+
+  const [yesBump, setYesBump] = useState(0)
+
+  useEffect(() => {
+    if (fleeCount <= 0) return
+    setYesBump((n) => n + 1)
+  }, [fleeCount])
 
   const prompt =
     PROMPTS[Math.min(Math.max(noStage, fleeCount > 0 ? 1 : 0), PROMPTS.length - 1)] ??
@@ -446,8 +453,14 @@ export function QuestionPage({ demo = false }: Props) {
               <div className="yes-slot">
                 <button
                   type="button"
-                  className="yes-btn"
-                  style={{ transform: `scale(${yesScale})` }}
+                  key={yesBump > 0 ? `yes-bump-${yesBump}` : 'yes'}
+                  className={`yes-btn ${fleeCount > 0 ? 'is-assertive' : ''} ${
+                    yesBump > 0 ? 'is-bump' : ''
+                  }`}
+                  style={{
+                    ['--yes-scale' as string]: String(yesScale),
+                    transform: `scale(${yesScale})`,
+                  }}
                   onClick={handleYes}
                   disabled={submitting}
                 >

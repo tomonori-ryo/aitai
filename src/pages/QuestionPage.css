@@ -73,11 +73,10 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  padding-top: 0.85rem;
-  padding-bottom: 0.35rem;
+  padding-top: 1.1rem;
+  padding-bottom: 0.75rem;
   pointer-events: none;
-  /* 拡大ではみ出しても上の文言を隠さない余裕 */
-  min-height: 4.25rem;
+  min-height: 5rem;
 }
 
 .yes-slot .yes-btn {
@@ -177,6 +176,38 @@
   transform-origin: center bottom;
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
   flex-shrink: 0;
+}
+
+.yes-btn.is-assertive {
+  box-shadow:
+    0 14px 28px rgba(190, 18, 60, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  filter: saturate(1.08);
+}
+
+.yes-btn.is-bump {
+  animation: yes-insist 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes yes-insist {
+  0% {
+    transform: scale(var(--yes-scale, 1)) rotate(0deg);
+  }
+  18% {
+    transform: scale(calc(var(--yes-scale, 1) * 1.1)) rotate(-5deg);
+  }
+  36% {
+    transform: scale(calc(var(--yes-scale, 1) * 1.16)) rotate(5deg);
+  }
+  54% {
+    transform: scale(calc(var(--yes-scale, 1) * 1.08)) rotate(-3deg);
+  }
+  72% {
+    transform: scale(calc(var(--yes-scale, 1) * 1.12)) rotate(3deg);
+  }
+  100% {
+    transform: scale(var(--yes-scale, 1)) rotate(0deg);
+  }
 }
 
 .result-title.is-no {
