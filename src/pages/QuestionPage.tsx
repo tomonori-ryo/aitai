@@ -45,9 +45,6 @@ const PROMPTS = [
   '最後の確認だよ…',
 ]
 
-/** 逃げる演出の上限。到達後は捕まる／懇願へ */
-const FLEE_LIMIT = 3
-
 export function QuestionPage({ demo = false }: Props) {
   const { id: questionId } = useParams()
   const [response, setResponse] = useState<ResponseRecord | null>(null)
@@ -281,10 +278,8 @@ export function QuestionPage({ demo = false }: Props) {
   const handleFleeAttempt = useCallback(() => {
     touchedNoRef.current = true
     setFleeCount((n) => {
-      const next = n + 1
       vibrate(25)
-      if (next >= FLEE_LIMIT) setCatchable(true)
-      return next
+      return n + 1
     })
   }, [])
 
@@ -292,7 +287,7 @@ export function QuestionPage({ demo = false }: Props) {
     touchedNoRef.current = true
   }, [])
 
-  /** 逃げる上限到達後（または稀キャッチ）→ 懇願演出へ接続 */
+  /** 約10%の稀キャッチ → 懇願演出へ接続（3回で止めない） */
   const handleFleeCaught = useCallback(() => {
     touchedNoRef.current = true
     setCatchable(true)
@@ -443,12 +438,12 @@ export function QuestionPage({ demo = false }: Props) {
 
               {!pleadOpen && (
                 <RunawayButton
-                  label={catchable ? '本当にいいえ' : 'いいえ'}
+                  label="いいえ"
                   onAttempt={handleFleeAttempt}
                   onContact={handleFleeContact}
                   catchable={catchable}
                   onCaught={handleFleeCaught}
-                  luckyRate={demo ? 0.2 : 0.05}
+                  luckyRate={0.1}
                 />
               )}
 
@@ -464,10 +459,7 @@ export function QuestionPage({ demo = false }: Props) {
             </div>
 
             {fleeCount > 0 && !pleadOpen && !catchable && (
-              <p className="no-hint">NOチャレンジ {fleeCount}回目</p>
-            )}
-            {catchable && !pleadOpen && (
-              <p className="no-hint">本気なら下のボタンを…</p>
+              <p className="no-hint">NOチャレンジ {fleeCount}回目（稀に捕まる）</p>
             )}
             {noStage > 0 && !pleadOpen && (
               <p className="no-hint">
@@ -480,7 +472,7 @@ export function QuestionPage({ demo = false }: Props) {
         {error && <p className="error">{error}</p>}
         {demo && (
           <p className="demo-note">
-            ※ デモ：NOは逃げたあと懇願に入ります（保存なし）
+            ※ デモ：NOはだいたい10回に1回捕まり、その後懇願に入ります（保存なし）
           </p>
         )}
       </section>
