@@ -1,6 +1,6 @@
 .runaway-wrap {
   position: absolute;
-  top: 4.25rem;
+  top: 5.75rem;
   left: 0;
   right: 0;
   bottom: 0;
@@ -109,7 +109,7 @@
 
 @media (max-width: 640px) {
   .runaway-wrap {
-    top: 3.25rem;
+    top: 5.25rem;
   }
 
   .runaway-btn {

@@ -72,7 +72,7 @@ export function QuestionPage({ demo = false }: Props) {
     if (noStage >= 4) return yesVisualScale(noStage)
     // 最初は等倍。NOを追うたびに少しずつ大きくする
     if (fleeCount <= 0) return 1
-    return Math.min(2.2, 1 + fleeCount * 0.18)
+    return Math.min(1.85, 1 + fleeCount * 0.14)
   }, [fleeCount, noStage])
 
   const prompt =
