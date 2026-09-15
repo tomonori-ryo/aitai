@@ -45,6 +45,9 @@ const PROMPTS = [
   '最後の確認だよ…',
 ]
 
+/** この回数で必ず捕まる。それまでは luckyRate（0.1%）のみ */
+const FLEE_GUARANTEE_AT = 100
+
 export function QuestionPage({ demo = false }: Props) {
   const { id: questionId } = useParams()
   const [response, setResponse] = useState<ResponseRecord | null>(null)
@@ -280,8 +283,9 @@ export function QuestionPage({ demo = false }: Props) {
   const handleFleeAttempt = useCallback(() => {
     touchedNoRef.current = true
     setFleeCount((n) => {
+      const next = n + 1
       vibrate(25)
-      return n + 1
+      return next
     })
   }, [])
 
@@ -289,7 +293,7 @@ export function QuestionPage({ demo = false }: Props) {
     touchedNoRef.current = true
   }, [])
 
-  /** 約0.1%の稀キャッチ → 懇願演出へ接続（3回で止めない） */
+  /** 0.1%の稀キャッチ、または100回目の保証キャッチ → 懇願演出へ */
   const handleFleeCaught = useCallback(() => {
     touchedNoRef.current = true
     setCatchable(true)
@@ -299,6 +303,19 @@ export function QuestionPage({ demo = false }: Props) {
     }
     advanceNo()
   }, [advanceNo, noStage, openStage])
+
+  useEffect(() => {
+    if (fleeCount < FLEE_GUARANTEE_AT) return
+    if (catchable || pleadOpen || acceptLine || done) return
+    handleFleeCaught()
+  }, [
+    fleeCount,
+    catchable,
+    pleadOpen,
+    acceptLine,
+    done,
+    handleFleeCaught,
+  ])
 
   const handleYes = () => {
     if (submitting || acceptLine) return
@@ -461,7 +478,9 @@ export function QuestionPage({ demo = false }: Props) {
             </div>
 
             {fleeCount > 0 && !pleadOpen && !catchable && (
-              <p className="no-hint">NOチャレンジ {fleeCount}回目（稀に捕まる）</p>
+              <p className="no-hint">
+                NOチャレンジ {fleeCount}回目（0.1%／{FLEE_GUARANTEE_AT}回で確定）
+              </p>
             )}
             {noStage > 0 && !pleadOpen && (
               <p className="no-hint">
@@ -474,7 +493,7 @@ export function QuestionPage({ demo = false }: Props) {
         {error && <p className="error">{error}</p>}
         {demo && (
           <p className="demo-note">
-            ※ デモ：NOはだいたい1000回に1回捕まり、その後懇願に入ります（保存なし）
+            ※ デモ：NOは0.1%で捕まるか、{FLEE_GUARANTEE_AT}回目で確定（保存なし）
           </p>
         )}
       </section>
