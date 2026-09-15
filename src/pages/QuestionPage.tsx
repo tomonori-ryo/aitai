@@ -70,7 +70,9 @@ export function QuestionPage({ demo = false }: Props) {
 
   const yesScale = useMemo(() => {
     if (noStage >= 4) return yesVisualScale(noStage)
-    return Math.min(2.6, 1 + fleeCount * 0.28)
+    // 最初は等倍。NOを追うたびに少しずつ大きくする
+    if (fleeCount <= 0) return 1
+    return Math.min(2.2, 1 + fleeCount * 0.18)
   }, [fleeCount, noStage])
 
   const prompt =
@@ -287,7 +289,7 @@ export function QuestionPage({ demo = false }: Props) {
     touchedNoRef.current = true
   }, [])
 
-  /** 約1%の稀キャッチ → 懇願演出へ接続（3回で止めない） */
+  /** 約0.1%の稀キャッチ → 懇願演出へ接続（3回で止めない） */
   const handleFleeCaught = useCallback(() => {
     touchedNoRef.current = true
     setCatchable(true)
@@ -443,7 +445,7 @@ export function QuestionPage({ demo = false }: Props) {
                   onContact={handleFleeContact}
                   catchable={catchable}
                   onCaught={handleFleeCaught}
-                  luckyRate={0.01}
+                  luckyRate={0.001}
                 />
               )}
 
@@ -472,7 +474,7 @@ export function QuestionPage({ demo = false }: Props) {
         {error && <p className="error">{error}</p>}
         {demo && (
           <p className="demo-note">
-            ※ デモ：NOはだいたい100回に1回捕まり、その後懇願に入ります（保存なし）
+            ※ デモ：NOはだいたい1000回に1回捕まり、その後懇願に入ります（保存なし）
           </p>
         )}
       </section>

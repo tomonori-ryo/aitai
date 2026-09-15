@@ -21,7 +21,7 @@ const SCARE_RADIUS = 96
 const TOUCH_SCARE_RADIUS = 140
 /** タッチ押下の当たり判定パディング */
 const TOUCH_HIT_PAD = 64
-const DEFAULT_LUCKY_CATCH_RATE = 0.01
+const DEFAULT_LUCKY_CATCH_RATE = 0.001
 
 export function RunawayButton({
   label,
