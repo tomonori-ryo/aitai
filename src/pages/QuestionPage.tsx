@@ -287,7 +287,7 @@ export function QuestionPage({ demo = false }: Props) {
     touchedNoRef.current = true
   }, [])
 
-  /** 約10%の稀キャッチ → 懇願演出へ接続（3回で止めない） */
+  /** 約1%の稀キャッチ → 懇願演出へ接続（3回で止めない） */
   const handleFleeCaught = useCallback(() => {
     touchedNoRef.current = true
     setCatchable(true)
@@ -443,7 +443,7 @@ export function QuestionPage({ demo = false }: Props) {
                   onContact={handleFleeContact}
                   catchable={catchable}
                   onCaught={handleFleeCaught}
-                  luckyRate={0.1}
+                  luckyRate={0.01}
                 />
               )}
 
@@ -472,7 +472,7 @@ export function QuestionPage({ demo = false }: Props) {
         {error && <p className="error">{error}</p>}
         {demo && (
           <p className="demo-note">
-            ※ デモ：NOはだいたい10回に1回捕まり、その後懇願に入ります（保存なし）
+            ※ デモ：NOはだいたい100回に1回捕まり、その後懇願に入ります（保存なし）
           </p>
         )}
       </section>
