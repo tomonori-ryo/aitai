@@ -46,13 +46,13 @@
 
 .share-alt-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.45rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
 }
 
 .share-alt-btn {
   font-family: 'Zen Kaku Gothic New', sans-serif;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   min-height: 42px;
   border: 1.5px solid rgba(40, 24, 28, 0.12);
@@ -62,6 +62,17 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-sizing: border-box;
+  padding: 0 0.25rem;
+}
+
+.share-alt-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .share-flash {

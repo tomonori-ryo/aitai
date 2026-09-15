@@ -7,6 +7,8 @@ import {
   copyText,
   getSharePageUrl,
   lineShareUrl,
+  openShareTargetSameTab,
+  shareForInstagram,
   shareImageAndUrl,
   twitterIntentUrl,
 } from '../utils/share'
@@ -31,10 +33,12 @@ export function SharePanel({
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
   const shareUrl = getSharePageUrl(questionId, responseId)
+  const xUrl = twitterIntentUrl(shareUrl, answer, firstPerson)
+  const lineUrl = lineShareUrl(shareUrl, answer, firstPerson)
 
   const flash = (msg: string) => {
     setNote(msg)
-    window.setTimeout(() => setNote(''), 2200)
+    window.setTimeout(() => setNote(''), 2800)
   }
 
   const ensureBlob = useCallback(async () => {
@@ -70,8 +74,35 @@ export function SharePanel({
     flash(ok ? 'リンクをコピーしました' : 'コピーしてください')
   }
 
-  const openExternal = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer')
+  const handleLine = () => {
+    // LINE はディープリンクを同一タブで開くのがいちばん確実
+    openShareTargetSameTab(lineUrl)
+  }
+
+  const handleX = () => {
+    openShareTargetSameTab(xUrl)
+  }
+
+  const handleInstagram = async () => {
+    setBusy(true)
+    try {
+      const blob = await ensureBlob()
+      const result = await shareForInstagram({
+        blob,
+        shareUrl,
+        answer,
+        firstPerson,
+      })
+      if (result === 'shared') {
+        flash('共有シートを開きました。Instagramを選んでね（リンクもコピー済み）')
+      } else if (result === 'prepared') {
+        flash('画像を保存＋リンクコピー済み。Instagramに貼ってね')
+      }
+    } catch {
+      flash('準備に失敗しました。リンクコピーを試してね')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -98,24 +129,28 @@ export function SharePanel({
         </button>
 
         <div className="share-alt-row">
-          <button
-            type="button"
-            className="share-alt-btn"
-            onClick={() =>
-              openExternal(twitterIntentUrl(shareUrl, answer, firstPerson))
-            }
-          >
+          <a className="share-alt-btn" href={xUrl} onClick={(e) => {
+            e.preventDefault()
+            handleX()
+          }}>
             X
-          </button>
+          </a>
+          <a className="share-alt-btn" href={lineUrl} onClick={(e) => {
+            e.preventDefault()
+            handleLine()
+          }}>
+            LINE
+          </a>
           <button
             type="button"
             className="share-alt-btn"
-            onClick={() => openExternal(lineShareUrl(shareUrl))}
+            onClick={handleInstagram}
+            disabled={busy}
           >
-            LINE
+            IG
           </button>
           <button type="button" className="share-alt-btn" onClick={handleCopy}>
-            リンクコピー
+            コピー
           </button>
         </div>
       </div>
