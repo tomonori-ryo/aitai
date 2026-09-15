@@ -1,0 +1,59 @@
+.viral-cta {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(40, 24, 28, 0.08);
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+  pointer-events: none;
+  max-width: 18rem;
+}
+
+.viral-cta.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.viral-cta-heading {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #8a5a64;
+  font-weight: 500;
+}
+
+.viral-cta-btn {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  min-height: 44px;
+  padding: 0.65rem 1.15rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(40, 24, 28, 0.14);
+  background: rgba(255, 255, 255, 0.55);
+  color: #6b4a52;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.viral-cta-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(225, 29, 72, 0.25);
+  color: #be123c;
+}
+
+.viral-cta-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.viral-cta-error {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: #b91c1c;
+}

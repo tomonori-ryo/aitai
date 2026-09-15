@@ -1,0 +1,75 @@
+.share-panel {
+  width: min(100%, 22rem);
+  margin: 1.4rem auto 0;
+  text-align: center;
+}
+
+.share-panel-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #5a3a42;
+}
+
+.share-panel-note {
+  margin: 0.35rem 0 0.9rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #9a6b74;
+}
+
+.share-panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.share-main-btn {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  min-height: 48px;
+  border: 1.5px solid rgba(225, 29, 72, 0.28);
+  border-radius: 999px;
+  padding: 0.75rem 1.2rem;
+  color: #be123c;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.share-main-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.share-alt-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+}
+
+.share-alt-btn {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-height: 42px;
+  border: 1.5px solid rgba(40, 24, 28, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #5a3a42;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.share-flash {
+  margin: 0.7rem 0 0;
+  font-size: 0.8rem;
+  color: #c45a6a;
+}
+
+.share-panel.is-compact {
+  margin-top: 1rem;
+}

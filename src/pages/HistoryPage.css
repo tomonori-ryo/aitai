@@ -1,0 +1,116 @@
+.history-stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  min-height: 100svh;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: max(1.5rem, env(safe-area-inset-top))
+    max(1.25rem, env(safe-area-inset-right))
+    max(1.75rem, env(safe-area-inset-bottom))
+    max(1.25rem, env(safe-area-inset-left));
+}
+
+.history .brand {
+  font-family: 'Mochiy Pop One', sans-serif;
+  font-size: clamp(1.55rem, 7vw, 2.4rem);
+  margin: 0 0 0.6rem;
+}
+
+.history-title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.15rem, 4.5vw, 1.45rem);
+  color: #3a252c;
+}
+
+.history-copy {
+  margin: 0 0 1.2rem;
+  color: #6b4a52;
+  line-height: 1.65;
+  font-size: 0.92rem;
+}
+
+.history-create {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  margin-bottom: 1.4rem;
+  min-height: 48px;
+}
+
+.history-empty {
+  color: #8a5a64;
+  margin: 1rem 0;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1.5px solid rgba(40, 24, 28, 0.08);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.history-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(225, 29, 72, 0.25);
+}
+
+.history-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.45rem;
+}
+
+.history-card-top strong {
+  font-size: 1rem;
+  color: #1f1216;
+}
+
+.badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-pending {
+  background: rgba(154, 107, 116, 0.14);
+  color: #8a5a64;
+}
+
+.badge-answered {
+  background: rgba(225, 29, 72, 0.12);
+  color: #be123c;
+}
+
+.history-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  color: #8a5a64;
+}
+
+.history .home-link {
+  display: inline-block;
+  margin-top: 1.6rem;
+  color: #8a5a64;
+  font-size: 0.9rem;
+}

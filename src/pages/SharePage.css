@@ -1,0 +1,85 @@
+.share-landing-stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: max(1.5rem, env(safe-area-inset-top))
+    max(1.25rem, env(safe-area-inset-right))
+    max(1.75rem, env(safe-area-inset-bottom))
+    max(1.25rem, env(safe-area-inset-left));
+}
+
+.share-landing .brand {
+  font-family: 'Mochiy Pop One', sans-serif;
+  font-size: clamp(1.8rem, 8vw, 2.8rem);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.share-landing-label {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.28em;
+  color: #8a5a64;
+}
+
+.share-landing-answer {
+  margin: 0.2rem 0 0;
+  font-family: 'Mochiy Pop One', sans-serif;
+  font-size: clamp(3.4rem, 18vw, 5.5rem);
+  line-height: 1;
+}
+
+.share-landing-answer.is-yes {
+  color: #e11d48;
+}
+
+.share-landing-answer.is-aggregate {
+  font-size: clamp(1.8rem, 8vw, 2.8rem);
+  line-height: 1.2;
+}
+
+.share-landing-copy {
+  margin: 0.8rem 0 0;
+  color: #6b4a52;
+  font-size: 0.95rem;
+}
+
+.share-landing-create {
+  margin-top: 0.75rem;
+  font-family: 'Mochiy Pop One', sans-serif;
+  font-size: 0.95rem;
+  min-height: 48px;
+  padding: 0.8rem 1.4rem;
+  border: none;
+  border-radius: 999px;
+  color: #fff8f9;
+  background: linear-gradient(135deg, #ff4d6d 0%, #e11d48 55%, #be123c 100%);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.share-landing-viral {
+  margin-top: 1.6rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(40, 24, 28, 0.08);
+  max-width: 18rem;
+}
+
+.share-landing-viral p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #8a5a64;
+}
+
+.share-landing.is-sad .blob-a,
+.share-landing.is-sad .blob-b {
+  filter: blur(40px) grayscale(0.3);
+  opacity: 0.45;
+}
