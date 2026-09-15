@@ -64,6 +64,11 @@
   justify-content: center;
   width: 100%;
   padding-top: 0.25rem;
+  pointer-events: none;
+}
+
+.yes-slot .yes-btn {
+  pointer-events: auto;
 }
 
 .no-slot {

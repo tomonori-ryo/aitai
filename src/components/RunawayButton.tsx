@@ -17,14 +17,8 @@ type Props = {
 const FLEE_COOLDOWN_MS = 120
 const SCARE_RADIUS = 88
 /** タッチ時の当たり判定をボタン外周へ広げる量(px) */
-const TOUCH_HIT_PAD = 28
+const TOUCH_HIT_PAD = 36
 const DEFAULT_LUCKY_CATCH_RATE = 0.1
-
-function isTouchDevice(): boolean {
-  if (typeof window === 'undefined') return false
-  // スマホ／タブレット向け。PCのタッチ対応トラックパッドは除外する
-  return window.matchMedia('(pointer: coarse)').matches
-}
 
 export function RunawayButton({
   label,
@@ -38,7 +32,8 @@ export function RunawayButton({
   const wrapRef = useRef<HTMLDivElement>(null)
   const lastFlee = useRef(0)
   const caughtRef = useRef(false)
-  const touchModeRef = useRef(isTouchDevice())
+  /** touchstart 直後の pointer/click 二重発火を抑止 */
+  const lastTouchFleeAt = useRef(0)
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [taunt, setTaunt] = useState('')
   const [lucky, setLucky] = useState(false)
@@ -158,13 +153,16 @@ export function RunawayButton({
     }
   }, [])
 
-  // PC: マウス接近・押下で逃げる（従来どおり）
+  // マウス: hover / 押下で逃げる（touch 由来の pointer は無視）
   useEffect(() => {
     const wrap = wrapRef.current
-    if (!wrap || catchable || lucky || touchModeRef.current) return
+    if (!wrap || catchable || lucky) return
+
+    const recentlyTouched = () =>
+      performance.now() - lastTouchFleeAt.current < 700
 
     const onMove = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return
+      if (e.pointerType === 'touch' || recentlyTouched()) return
       if (caughtRef.current) return
       if (!isNearButton(e.clientX, e.clientY, SCARE_RADIUS * 0.35)) return
       e.preventDefault()
@@ -173,7 +171,7 @@ export function RunawayButton({
     }
 
     const onDown = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return
+      if (e.pointerType === 'touch' || recentlyTouched()) return
       if (caughtRef.current) return
       if (!isNearButton(e.clientX, e.clientY, SCARE_RADIUS * 0.35)) return
       e.preventDefault()
@@ -195,29 +193,37 @@ export function RunawayButton({
     triggerFleeFromPress,
   ])
 
-  // タッチ: touchstart の瞬間に逃げる（タップ確定前）
+  // タッチ: touchstart の瞬間に逃げる（端末判定に依存しない）
   useEffect(() => {
     const wrap = wrapRef.current
-    if (!wrap || catchable || lucky || !touchModeRef.current) return
+    if (!wrap || catchable || lucky) return
 
     const onTouchStart = (e: TouchEvent) => {
       if (caughtRef.current) return
       const touch = e.touches[0]
       if (!touch) return
       if (!isNearButton(touch.clientX, touch.clientY, TOUCH_HIT_PAD)) return
+      // タップ確定前に逃げる。後続の click / pointer を抑止
       e.preventDefault()
+      e.stopPropagation()
+      lastTouchFleeAt.current = performance.now()
       triggerFleeFromPress(touch.clientX, touch.clientY)
     }
 
-    wrap.addEventListener('touchstart', onTouchStart, { passive: false })
+    // capture でボタンより先に確実に拾う
+    wrap.addEventListener('touchstart', onTouchStart, {
+      passive: false,
+      capture: true,
+    })
     return () => {
-      wrap.removeEventListener('touchstart', onTouchStart)
+      wrap.removeEventListener('touchstart', onTouchStart, true)
     }
   }, [catchable, lucky, isNearButton, triggerFleeFromPress])
 
   const handleButtonPointer = (e: React.PointerEvent) => {
     if (catchable || caughtRef.current) return
-    if (touchModeRef.current || e.pointerType === 'touch') return
+    if (e.pointerType === 'touch') return
+    if (performance.now() - lastTouchFleeAt.current < 700) return
     e.preventDefault()
     e.stopPropagation()
     triggerFleeFromPress(e.clientX, e.clientY)
@@ -230,7 +236,7 @@ export function RunawayButton({
       return
     }
     if (caughtRef.current) return
-    if (touchModeRef.current) return
+    if (performance.now() - lastTouchFleeAt.current < 700) return
     triggerFleeFromPress(e.clientX, e.clientY)
   }
 
@@ -268,7 +274,8 @@ export function RunawayButton({
         }
         onPointerEnter={(e) => {
           if (catchable || caughtRef.current) return
-          if (touchModeRef.current || e.pointerType === 'touch') return
+          if (e.pointerType === 'touch') return
+          if (performance.now() - lastTouchFleeAt.current < 700) return
           e.preventDefault()
           onContact?.()
           flee(e.clientX, e.clientY)
@@ -276,7 +283,6 @@ export function RunawayButton({
         onPointerDown={handleButtonPointer}
         onFocus={(e) => {
           if (catchable || caughtRef.current) return
-          if (touchModeRef.current) return
           e.target.blur()
           onContact?.()
           flee()
