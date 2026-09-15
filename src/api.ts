@@ -4,7 +4,7 @@ import type {
   ResponseRecord,
   ShareInfo,
 } from './types'
-import { addQuestionToHistory } from './utils/history'
+import { addQuestionToHistory, updateHistoryLabel } from './utils/history'
 
 export async function createQuestion(
   label = '',
@@ -29,6 +29,21 @@ export async function getQuestion(id: string): Promise<QuestionDetail> {
   const res = await fetch(`/api/questions/${id}`)
   if (!res.ok) throw new Error('見つかりませんでした')
   return res.json()
+}
+
+export async function updateQuestionLabel(
+  id: string,
+  label: string,
+): Promise<QuestionDetail> {
+  const res = await fetch(`/api/questions/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label }),
+  })
+  if (!res.ok) throw new Error('ラベルの保存に失敗しました')
+  const question = (await res.json()) as QuestionDetail
+  updateHistoryLabel(id, question.label || '')
+  return question
 }
 
 export async function getQuestionsBatch(

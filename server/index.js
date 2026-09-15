@@ -321,6 +321,22 @@ app.get('/api/questions/:id', (req, res) => {
   }
 })
 
+/** 作成者用: 相手向けラベルを更新 */
+app.patch('/api/questions/:id', async (req, res) => {
+  try {
+    const label =
+      typeof req.body?.label === 'string' ? req.body.label.trim().slice(0, 40) : ''
+    const question = await updateQuestion(req.params.id, (q) => {
+      q.label = label
+      return q
+    })
+    res.json(publicQuestion(question))
+  } catch (err) {
+    if (err.code === 'not_found') return res.status(404).json({ error: 'not_found' })
+    res.status(400).json({ error: 'invalid_id' })
+  }
+})
+
 /** 回答者用: 既存 responseId があれば返し、なければ新規発行（追記のみ） */
 app.post('/api/questions/:id/responses/claim', async (req, res) => {
   try {

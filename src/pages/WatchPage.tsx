@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { createQuestion, getQuestion } from '../api'
+import { createQuestion, getQuestion, updateQuestionLabel } from '../api'
 import { Celebration } from '../components/Celebration'
 import { SharePanel } from '../components/SharePanel'
 import type { QuestionDetail } from '../types'
 import { formatSpeedLabel, questionStatusLabel } from '../types'
-import { updateHistoryLabel } from '../utils/history'
 import { questionTitle } from '../utils/firstPerson'
 import { copyText, getQuestionUrl } from '../utils/share'
 import { playSad, playSuccess, vibrate } from '../utils/sound'
@@ -17,10 +16,14 @@ export function WatchPage() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [labelDraft, setLabelDraft] = useState('')
+  const [labelNote, setLabelNote] = useState('')
+  const [labelSaving, setLabelSaving] = useState(false)
   const [askBusy, setAskBusy] = useState(false)
   const [newLink, setNewLink] = useState('')
   const [celebrated, setCelebrated] = useState(false)
   const [phase, setPhase] = useState<'idle' | 'suspense' | 'ready'>('idle')
+  const labelFocusedRef = useRef(false)
+  const labelHydratedRef = useRef(false)
 
   const questionUrl = useMemo(() => {
     if (!id) return ''
@@ -32,7 +35,11 @@ export function WatchPage() {
     try {
       const data = await getQuestion(id)
       setQuestion(data)
-      setLabelDraft(data.label || '')
+      // 入力中はポーリングで上書きしない
+      if (!labelFocusedRef.current) {
+        setLabelDraft(data.label || '')
+        labelHydratedRef.current = true
+      }
       setError('')
     } catch {
       setError('このリンクは見つかりませんでした。')
@@ -44,6 +51,10 @@ export function WatchPage() {
     setPhase('idle')
     setNewLink('')
     setError('')
+    setLabelDraft('')
+    setLabelNote('')
+    labelHydratedRef.current = false
+    labelFocusedRef.current = false
   }, [id])
 
   useEffect(() => {
@@ -79,10 +90,22 @@ export function WatchPage() {
     return () => window.clearTimeout(timer)
   }, [question?.id, question?.answeredCount, celebrated])
 
-  const saveLabel = () => {
-    if (!id) return
-    updateHistoryLabel(id, labelDraft)
-    setQuestion((q) => (q ? { ...q, label: labelDraft.trim().slice(0, 40) } : q))
+  const saveLabel = async () => {
+    if (!id || labelSaving) return
+    const next = labelDraft.trim().slice(0, 40)
+    setLabelSaving(true)
+    setLabelNote('')
+    try {
+      const updated = await updateQuestionLabel(id, next)
+      setQuestion(updated)
+      setLabelDraft(updated.label || '')
+      setLabelNote('ラベルを保存しました')
+      window.setTimeout(() => setLabelNote(''), 1800)
+    } catch {
+      setLabelNote('保存に失敗しました')
+    } finally {
+      setLabelSaving(false)
+    }
   }
 
   const handleCopyLink = async () => {
@@ -159,12 +182,19 @@ export function WatchPage() {
               placeholder="例: Aさん宛"
               maxLength={40}
               onChange={(e) => setLabelDraft(e.target.value)}
-              onBlur={saveLabel}
+              onFocus={() => {
+                labelFocusedRef.current = true
+              }}
+              onBlur={() => {
+                labelFocusedRef.current = false
+                void saveLabel()
+              }}
             />
-            <button type="button" onClick={saveLabel}>
-              保存
+            <button type="button" onClick={() => void saveLabel()} disabled={labelSaving}>
+              {labelSaving ? '…' : '保存'}
             </button>
           </div>
+          {labelNote && <p className="label-note">{labelNote}</p>}
         </div>
 
         {question && (
