@@ -37,6 +37,7 @@ export function RunawayButton({
   const caughtRef = useRef(false)
   /** touchstart 直後の pointer/click 二重発火を抑止 */
   const lastTouchFleeAt = useRef(0)
+  const lastPosRef = useRef<{ x: number; y: number } | null>(null)
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [taunt, setTaunt] = useState('')
   const [lucky, setLucky] = useState(false)
@@ -58,68 +59,63 @@ export function RunawayButton({
       const pad = 4
       const maxX = Math.max(pad, bounds.width - btnRect.width - pad)
       const maxY = Math.max(pad, bounds.height - btnRect.height - pad)
+      const btnW = btnRect.width
+      const btnH = btnRect.height
+      const minAway = touch ? TOUCH_SCARE_RADIUS * 0.85 : SCARE_RADIUS * 0.75
 
-      let nextX: number
-      let nextY: number
+      const relX =
+        clientX != null ? clientX - bounds.left : bounds.width / 2
+      const relY =
+        clientY != null ? clientY - bounds.top : bounds.height / 2
+      const prev = lastPosRef.current
 
-      if (clientX != null && clientY != null) {
-        const relX = clientX - bounds.left
-        const relY = clientY - bounds.top
-        const btnW = btnRect.width
-        const btnH = btnRect.height
+      // エリア全体にばらまいた候補から、指・直前位置から遠いものをランダム採用
+      const candidates: { x: number; y: number; score: number }[] = []
+      const sampleCount = 28
+      for (let i = 0; i < sampleCount; i++) {
+        const x = pad + Math.random() * Math.max(0, maxX - pad)
+        const y = pad + Math.random() * Math.max(0, maxY - pad)
+        const cx = x + btnW / 2
+        const cy = y + btnH / 2
+        const dxFinger = cx - relX
+        const dyFinger = cy - relY
+        const distFinger = Math.hypot(dxFinger, dyFinger)
+        if (distFinger < minAway) continue
 
-        // 指から遠い四隅・辺を候補にして、いちばん離れた位置へ飛ばす
-        const candidates = [
-          { x: pad, y: pad },
-          { x: maxX, y: pad },
-          { x: pad, y: maxY },
-          { x: maxX, y: maxY },
-          { x: pad, y: maxY * 0.45 },
-          { x: maxX, y: maxY * 0.45 },
-          { x: maxX * 0.5, y: pad },
-          { x: maxX * 0.5, y: maxY },
-        ]
-
-        let best = candidates[0]!
-        let bestDist = -1
-        for (const c of candidates) {
-          const cx = c.x + btnW / 2
-          const cy = c.y + btnH / 2
-          const dx = cx - relX
-          const dy = cy - relY
-          const dist = dx * dx + dy * dy
-          if (dist > bestDist) {
-            bestDist = dist
-            best = c
-          }
+        let distPrev = 180
+        if (prev) {
+          distPrev = Math.hypot(x - prev.x, y - prev.y)
+          if (distPrev < 48) continue
         }
 
-        // わずかに揺らして毎回同じ角に固定されないようにする
-        const jitter = touch ? 0.18 : 0.12
-        nextX = Math.min(
-          maxX,
-          Math.max(pad, best.x + (Math.random() - 0.5) * maxX * jitter),
-        )
-        nextY = Math.min(
-          maxY,
-          Math.max(pad, best.y + (Math.random() - 0.5) * maxY * jitter),
-        )
-
-        const minDist = touch ? TOUCH_SCARE_RADIUS : SCARE_RADIUS
-        const cx = nextX + btnW / 2
-        const cy = nextY + btnH / 2
-        const dx = cx - relX
-        const dy = cy - relY
-        if (dx * dx + dy * dy < minDist * minDist) {
-          nextX = Math.min(maxX, Math.max(pad, maxX - nextX))
-          nextY = Math.min(maxY, Math.max(pad, maxY - nextY))
-        }
-      } else {
-        nextX = Math.random() * maxX
-        nextY = Math.random() * maxY
+        // 遠さ優先＋少しランダム性
+        const score = distFinger * 1.15 + distPrev * 0.85 + Math.random() * 40
+        candidates.push({ x, y, score })
       }
 
-      setPos({ x: nextX, y: nextY })
+      // 候補が少なすぎたら制約を緩めて全域ランダム
+      if (candidates.length < 4) {
+        for (let i = 0; i < 16; i++) {
+          const x = pad + Math.random() * Math.max(0, maxX - pad)
+          const y = pad + Math.random() * Math.max(0, maxY - pad)
+          const cx = x + btnW / 2
+          const cy = y + btnH / 2
+          const score = Math.hypot(cx - relX, cy - relY) + Math.random() * 60
+          candidates.push({ x, y, score })
+        }
+      }
+
+      candidates.sort((a, b) => b.score - a.score)
+      // 上位の中からランダムに選ぶ → 毎回いろんな方向へ
+      const pool = candidates.slice(0, Math.min(8, candidates.length))
+      const pick = pool[Math.floor(Math.random() * pool.length)] ?? {
+        x: Math.random() * maxX,
+        y: Math.random() * maxY,
+      }
+
+      const next = { x: pick.x, y: pick.y }
+      lastPosRef.current = next
+      setPos(next)
 
       const lines = ['え？無理〜', '捕まんないよ', 'いやだいやだ', 'こっち来ないで', 'YES一択でしょ']
       setTaunt(lines[Math.floor(Math.random() * lines.length)])
