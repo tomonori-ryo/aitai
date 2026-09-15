@@ -35,8 +35,8 @@ export async function updateQuestionLabel(
   id: string,
   label: string,
 ): Promise<QuestionDetail> {
-  const res = await fetch(`/api/questions/${id}`, {
-    method: 'PATCH',
+  const res = await fetch(`/api/questions/${id}/label`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ label }),
   })

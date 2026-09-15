@@ -23,7 +23,8 @@ export function WatchPage() {
   const [celebrated, setCelebrated] = useState(false)
   const [phase, setPhase] = useState<'idle' | 'suspense' | 'ready'>('idle')
   const labelFocusedRef = useRef(false)
-  const labelHydratedRef = useRef(false)
+  const labelDirtyRef = useRef(false)
+  const labelSavingRef = useRef(false)
 
   const questionUrl = useMemo(() => {
     if (!id) return ''
@@ -35,10 +36,13 @@ export function WatchPage() {
     try {
       const data = await getQuestion(id)
       setQuestion(data)
-      // 入力中はポーリングで上書きしない
-      if (!labelFocusedRef.current) {
+      // 入力中・未保存・保存中はポーリングで上書きしない
+      if (
+        !labelFocusedRef.current &&
+        !labelDirtyRef.current &&
+        !labelSavingRef.current
+      ) {
         setLabelDraft(data.label || '')
-        labelHydratedRef.current = true
       }
       setError('')
     } catch {
@@ -53,8 +57,9 @@ export function WatchPage() {
     setError('')
     setLabelDraft('')
     setLabelNote('')
-    labelHydratedRef.current = false
     labelFocusedRef.current = false
+    labelDirtyRef.current = false
+    labelSavingRef.current = false
   }, [id])
 
   useEffect(() => {
@@ -91,19 +96,23 @@ export function WatchPage() {
   }, [question?.id, question?.answeredCount, celebrated])
 
   const saveLabel = async () => {
-    if (!id || labelSaving) return
+    if (!id || labelSavingRef.current) return
     const next = labelDraft.trim().slice(0, 40)
+    labelSavingRef.current = true
     setLabelSaving(true)
     setLabelNote('')
     try {
       const updated = await updateQuestionLabel(id, next)
       setQuestion(updated)
       setLabelDraft(updated.label || '')
-      setLabelNote('ラベルを保存しました')
+      labelDirtyRef.current = false
+      setLabelNote(updated.label ? 'ラベルを保存しました' : 'ラベルをクリアしました')
       window.setTimeout(() => setLabelNote(''), 1800)
     } catch {
-      setLabelNote('保存に失敗しました')
+      setLabelNote('保存に失敗しました。もう一度保存を押してね')
+      labelDirtyRef.current = true
     } finally {
+      labelSavingRef.current = false
       setLabelSaving(false)
     }
   }
@@ -181,16 +190,30 @@ export function WatchPage() {
               value={labelDraft}
               placeholder="例: Aさん宛"
               maxLength={40}
-              onChange={(e) => setLabelDraft(e.target.value)}
+              onChange={(e) => {
+                labelDirtyRef.current = true
+                setLabelDraft(e.target.value)
+              }}
               onFocus={() => {
                 labelFocusedRef.current = true
               }}
               onBlur={() => {
                 labelFocusedRef.current = false
-                void saveLabel()
+                if (labelDirtyRef.current) void saveLabel()
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  ;(e.target as HTMLInputElement).blur()
+                }
               }}
             />
-            <button type="button" onClick={() => void saveLabel()} disabled={labelSaving}>
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => void saveLabel()}
+              disabled={labelSaving}
+            >
               {labelSaving ? '…' : '保存'}
             </button>
           </div>

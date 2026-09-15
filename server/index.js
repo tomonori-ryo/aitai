@@ -321,8 +321,7 @@ app.get('/api/questions/:id', (req, res) => {
   }
 })
 
-/** 作成者用: 相手向けラベルを更新 */
-app.patch('/api/questions/:id', async (req, res) => {
+async function handleUpdateLabel(req, res) {
   try {
     const label =
       typeof req.body?.label === 'string' ? req.body.label.trim().slice(0, 40) : ''
@@ -335,7 +334,11 @@ app.patch('/api/questions/:id', async (req, res) => {
     if (err.code === 'not_found') return res.status(404).json({ error: 'not_found' })
     res.status(400).json({ error: 'invalid_id' })
   }
-})
+}
+
+/** 作成者用: 相手向けラベルを更新（POST を正とする。一部環境で PATCH が落ちるため） */
+app.post('/api/questions/:id/label', handleUpdateLabel)
+app.patch('/api/questions/:id', handleUpdateLabel)
 
 /** 回答者用: 既存 responseId があれば返し、なければ新規発行（追記のみ） */
 app.post('/api/questions/:id/responses/claim', async (req, res) => {
