@@ -14,11 +14,14 @@ type Props = {
   luckyRate?: number
 }
 
-const FLEE_COOLDOWN_MS = 120
-const SCARE_RADIUS = 88
-/** タッチ時の当たり判定をボタン外周へ広げる量(px) */
-const TOUCH_HIT_PAD = 36
-const DEFAULT_LUCKY_CATCH_RATE = 0.1
+const FLEE_COOLDOWN_MS = 90
+const TOUCH_FLEE_COOLDOWN_MS = 55
+const SCARE_RADIUS = 96
+/** タッチ接近で逃げる半径（見た目よりかなり広め） */
+const TOUCH_SCARE_RADIUS = 140
+/** タッチ押下の当たり判定パディング */
+const TOUCH_HIT_PAD = 64
+const DEFAULT_LUCKY_CATCH_RATE = 0.06
 
 export function RunawayButton({
   label,
@@ -39,10 +42,11 @@ export function RunawayButton({
   const [lucky, setLucky] = useState(false)
 
   const flee = useCallback(
-    (clientX?: number, clientY?: number) => {
+    (clientX?: number, clientY?: number, touch = false) => {
       if (caughtRef.current) return
       const now = performance.now()
-      if (now - lastFlee.current < FLEE_COOLDOWN_MS) return
+      const cooldown = touch ? TOUCH_FLEE_COOLDOWN_MS : FLEE_COOLDOWN_MS
+      if (now - lastFlee.current < cooldown) return
       lastFlee.current = now
 
       const btn = ref.current
@@ -51,7 +55,7 @@ export function RunawayButton({
 
       const btnRect = btn.getBoundingClientRect()
       const bounds = wrap.getBoundingClientRect()
-      const pad = 6
+      const pad = 4
       const maxX = Math.max(pad, bounds.width - btnRect.width - pad)
       const maxY = Math.max(pad, bounds.height - btnRect.height - pad)
 
@@ -61,20 +65,52 @@ export function RunawayButton({
       if (clientX != null && clientY != null) {
         const relX = clientX - bounds.left
         const relY = clientY - bounds.top
-        const awayRight = relX < bounds.width / 2
-        const awayDown = relY < bounds.height / 2
-        nextX = awayRight
-          ? maxX * (0.55 + Math.random() * 0.4)
-          : maxX * Math.random() * 0.4
-        nextY = awayDown
-          ? maxY * (0.55 + Math.random() * 0.4)
-          : maxY * Math.random() * 0.4
+        const btnW = btnRect.width
+        const btnH = btnRect.height
 
-        const cx = nextX + btnRect.width / 2
-        const cy = nextY + btnRect.height / 2
+        // 指から遠い四隅・辺を候補にして、いちばん離れた位置へ飛ばす
+        const candidates = [
+          { x: pad, y: pad },
+          { x: maxX, y: pad },
+          { x: pad, y: maxY },
+          { x: maxX, y: maxY },
+          { x: pad, y: maxY * 0.45 },
+          { x: maxX, y: maxY * 0.45 },
+          { x: maxX * 0.5, y: pad },
+          { x: maxX * 0.5, y: maxY },
+        ]
+
+        let best = candidates[0]!
+        let bestDist = -1
+        for (const c of candidates) {
+          const cx = c.x + btnW / 2
+          const cy = c.y + btnH / 2
+          const dx = cx - relX
+          const dy = cy - relY
+          const dist = dx * dx + dy * dy
+          if (dist > bestDist) {
+            bestDist = dist
+            best = c
+          }
+        }
+
+        // わずかに揺らして毎回同じ角に固定されないようにする
+        const jitter = touch ? 0.18 : 0.12
+        nextX = Math.min(
+          maxX,
+          Math.max(pad, best.x + (Math.random() - 0.5) * maxX * jitter),
+        )
+        nextY = Math.min(
+          maxY,
+          Math.max(pad, best.y + (Math.random() - 0.5) * maxY * jitter),
+        )
+
+        const minDist = touch ? TOUCH_SCARE_RADIUS : SCARE_RADIUS
+        const cx = nextX + btnW / 2
+        const cy = nextY + btnH / 2
         const dx = cx - relX
         const dy = cy - relY
-        if (dx * dx + dy * dy < SCARE_RADIUS * SCARE_RADIUS) {
+        if (dx * dx + dy * dy < minDist * minDist) {
           nextX = Math.min(maxX, Math.max(pad, maxX - nextX))
           nextY = Math.min(maxY, Math.max(pad, maxY - nextY))
         }
@@ -117,16 +153,40 @@ export function RunawayButton({
     [],
   )
 
-  /** 既存の「押そうとして逃げた」処理（回数消費・稀キャッチ含む） */
+  const isWithinScareRadius = useCallback(
+    (clientX: number, clientY: number, radius: number) => {
+      const btn = ref.current
+      if (!btn) return false
+      const rect = btn.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+      const dx = clientX - cx
+      const dy = clientY - cy
+      return dx * dx + dy * dy < radius * radius
+    },
+    [],
+  )
+
+  /** 押下扱いで逃げる（回数消費・稀キャッチ） */
   const triggerFleeFromPress = useCallback(
-    (clientX: number, clientY: number) => {
+    (clientX: number, clientY: number, touch = false) => {
       if (caughtRef.current || catchable) return
       onContact?.()
       if (tryLuckyCatch()) return
       onAttempt()
-      flee(clientX, clientY)
+      flee(clientX, clientY, touch)
     },
     [catchable, flee, onAttempt, onContact, tryLuckyCatch],
+  )
+
+  /** 接近だけで逃げる（回数は消費しない） */
+  const triggerFleeProximity = useCallback(
+    (clientX: number, clientY: number, touch = false) => {
+      if (caughtRef.current || catchable) return
+      onContact?.()
+      flee(clientX, clientY, touch)
+    },
+    [catchable, flee, onContact],
   )
 
   useEffect(() => {
@@ -140,7 +200,7 @@ export function RunawayButton({
         x: Math.max(0, (bounds.width - btnRect.width) / 2),
         y: Math.max(
           0,
-          Math.min(bounds.height - btnRect.height - 8, bounds.height * 0.35),
+          Math.min(bounds.height - btnRect.height - 8, bounds.height * 0.4),
         ),
       })
     }
@@ -153,7 +213,7 @@ export function RunawayButton({
     }
   }, [])
 
-  // マウス: hover / 押下で逃げる（touch 由来の pointer は無視）
+  // マウス: hover / 押下で逃げる
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap || catchable || lucky) return
@@ -164,18 +224,17 @@ export function RunawayButton({
     const onMove = (e: PointerEvent) => {
       if (e.pointerType === 'touch' || recentlyTouched()) return
       if (caughtRef.current) return
-      if (!isNearButton(e.clientX, e.clientY, SCARE_RADIUS * 0.35)) return
+      if (!isWithinScareRadius(e.clientX, e.clientY, SCARE_RADIUS)) return
       e.preventDefault()
-      onContact?.()
-      flee(e.clientX, e.clientY)
+      triggerFleeProximity(e.clientX, e.clientY, false)
     }
 
     const onDown = (e: PointerEvent) => {
       if (e.pointerType === 'touch' || recentlyTouched()) return
       if (caughtRef.current) return
-      if (!isNearButton(e.clientX, e.clientY, SCARE_RADIUS * 0.35)) return
+      if (!isNearButton(e.clientX, e.clientY, 24)) return
       e.preventDefault()
-      triggerFleeFromPress(e.clientX, e.clientY)
+      triggerFleeFromPress(e.clientX, e.clientY, false)
     }
 
     wrap.addEventListener('pointerdown', onDown, { passive: false })
@@ -185,15 +244,15 @@ export function RunawayButton({
       wrap.removeEventListener('pointermove', onMove)
     }
   }, [
-    flee,
-    isNearButton,
     catchable,
     lucky,
-    onContact,
+    isNearButton,
+    isWithinScareRadius,
     triggerFleeFromPress,
+    triggerFleeProximity,
   ])
 
-  // タッチ: touchstart の瞬間に逃げる（端末判定に依存しない）
+  // タッチ: 広い範囲で touchstart / touchmove の瞬間に逃げる
   useEffect(() => {
     const wrap = wrapRef.current
     if (!wrap || catchable || lucky) return
@@ -202,23 +261,49 @@ export function RunawayButton({
       if (caughtRef.current) return
       const touch = e.touches[0]
       if (!touch) return
-      if (!isNearButton(touch.clientX, touch.clientY, TOUCH_HIT_PAD)) return
-      // タップ確定前に逃げる。後続の click / pointer を抑止
+      const near =
+        isNearButton(touch.clientX, touch.clientY, TOUCH_HIT_PAD) ||
+        isWithinScareRadius(touch.clientX, touch.clientY, TOUCH_SCARE_RADIUS)
+      if (!near) return
       e.preventDefault()
       e.stopPropagation()
       lastTouchFleeAt.current = performance.now()
-      triggerFleeFromPress(touch.clientX, touch.clientY)
+      triggerFleeFromPress(touch.clientX, touch.clientY, true)
     }
 
-    // capture でボタンより先に確実に拾う
+    const onTouchMove = (e: TouchEvent) => {
+      if (caughtRef.current) return
+      const touch = e.touches[0]
+      if (!touch) return
+      if (!isWithinScareRadius(touch.clientX, touch.clientY, TOUCH_SCARE_RADIUS)) {
+        return
+      }
+      e.preventDefault()
+      lastTouchFleeAt.current = performance.now()
+      // 指を追って近づいたら回数消費なしで逃げる（ホバー相当）
+      triggerFleeProximity(touch.clientX, touch.clientY, true)
+    }
+
     wrap.addEventListener('touchstart', onTouchStart, {
+      passive: false,
+      capture: true,
+    })
+    wrap.addEventListener('touchmove', onTouchMove, {
       passive: false,
       capture: true,
     })
     return () => {
       wrap.removeEventListener('touchstart', onTouchStart, true)
+      wrap.removeEventListener('touchmove', onTouchMove, true)
     }
-  }, [catchable, lucky, isNearButton, triggerFleeFromPress])
+  }, [
+    catchable,
+    lucky,
+    isNearButton,
+    isWithinScareRadius,
+    triggerFleeFromPress,
+    triggerFleeProximity,
+  ])
 
   const handleButtonPointer = (e: React.PointerEvent) => {
     if (catchable || caughtRef.current) return
@@ -226,7 +311,7 @@ export function RunawayButton({
     if (performance.now() - lastTouchFleeAt.current < 700) return
     e.preventDefault()
     e.stopPropagation()
-    triggerFleeFromPress(e.clientX, e.clientY)
+    triggerFleeFromPress(e.clientX, e.clientY, false)
   }
 
   const handleClick = (e: React.MouseEvent) => {
@@ -237,7 +322,7 @@ export function RunawayButton({
     }
     if (caughtRef.current) return
     if (performance.now() - lastTouchFleeAt.current < 700) return
-    triggerFleeFromPress(e.clientX, e.clientY)
+    triggerFleeFromPress(e.clientX, e.clientY, false)
   }
 
   return (
@@ -277,8 +362,7 @@ export function RunawayButton({
           if (e.pointerType === 'touch') return
           if (performance.now() - lastTouchFleeAt.current < 700) return
           e.preventDefault()
-          onContact?.()
-          flee(e.clientX, e.clientY)
+          triggerFleeProximity(e.clientX, e.clientY, false)
         }}
         onPointerDown={handleButtonPointer}
         onFocus={(e) => {

@@ -448,7 +448,7 @@ export function QuestionPage({ demo = false }: Props) {
                   onContact={handleFleeContact}
                   catchable={catchable}
                   onCaught={handleFleeCaught}
-                  luckyRate={demo ? 0.35 : 0.1}
+                  luckyRate={demo ? 0.2 : 0.05}
                 />
               )}
 

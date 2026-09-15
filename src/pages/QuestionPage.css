@@ -332,7 +332,7 @@
 
 @media (max-width: 640px) {
   .answer-area {
-    min-height: min(58vh, 22rem);
+    min-height: min(62vh, 26rem);
     width: 100%;
   }
 
